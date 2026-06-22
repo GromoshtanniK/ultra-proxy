@@ -1,0 +1,20 @@
+services:
+  proxy:
+    image: itdoginfo/sing-box:v1.13.13
+    container_name: ultra-proxy
+    restart: unless-stopped
+    entrypoint: ["sing-box"]
+    command: ["run", "-c", "/etc/sing-box/config.json"]
+    # Transparent TUN mode needs the WSL network namespace + tun device + caps.
+    # In host mode the mixed proxy is reachable at <WSL-IP>:<PROXY_PORT>; no port
+    # mapping is needed (and Docker ignores `ports` with network_mode host).
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      # The config.json is rendered on the host (scripts/render-config.*)
+      # config/config.json + the rule-sets it references. Edit and `docker compose restart` to apply
+      - ./config/config.json:/etc/sing-box/config.json:ro
+      - ./config/rule-set:/etc/sing-box/rule-set:ro

@@ -1,0 +1,6 @@
+# Shell scripts must stay LF so they run inside the Linux container.
+*.sh text eol=lf
+# The rendered config / rule-sets are consumed by sing-box inside Linux — keep LF.
+config/config.json text eol=lf
+config/config.json.template text eol=lf
+config/rule-set/*.json text eol=lf

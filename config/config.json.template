@@ -1,0 +1,59 @@
+{
+  "log": { "level": "__LOG_LEVEL__", "timestamp": true },
+  "dns": {
+    "servers": [
+      __DNS_REMOTE__,
+      { "type": "local", "tag": "dns-local" }
+    ],
+    "rules": [
+      { "action": "evaluate", "server": "dns-local" },
+      { "match_response": true, "rule_set": [ "domains", "block-remote", "geoblock-remote", "google_ai-remote", "telegram-remote", "youtube-remote", "cloudflare-remote", "cloudfront-remote", "digitalocean-remote", "hetzner-remote", "hodca-remote", "ovh-remote" ], "action": "route", "server": "dns-remote" }
+    ],
+    "final": "dns-local",
+    "strategy": "ipv4_only"
+  },
+  "inbounds": [
+    { "type": "tun", "tag": "tun-in", "address": [ "__TUN_ADDR__" ], "mtu": 1500, "auto_route": true, "strict_route": true, "stack": "mixed" },
+    { "type": "mixed", "tag": "in", "listen": "__LISTEN_ADDR__", "listen_port": __PROXY_PORT__ }
+  ],
+  "outbounds": [
+    { "type": "direct", "tag": "direct", "domain_resolver": { "server": "dns-local", "strategy": "ipv4_only" } },
+    {
+      "type": "http",
+      "tag": "external",
+      "server": "__EXT_SERVER__",
+      "server_port": __EXT_PORT____EXT_AUTH____EXT_TLS__
+    }
+  ],
+  "http_clients": [
+    { "tag": "direct-http", "detour": "direct" }
+  ],
+  "route": {
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dns-local",
+    "default_http_client": "direct-http",
+    "rule_set": [
+      { "type": "local", "tag": "domains", "format": "source", "path": "/etc/sing-box/rule-set/domains.json" },
+      { "type": "local", "tag": "subnets", "format": "source", "path": "/etc/sing-box/rule-set/subnets.json" },
+      { "type": "remote", "tag": "block-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/block.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "geoblock-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/geoblock.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "google_ai-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/google_ai.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "telegram-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/telegram.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "youtube-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/youtube.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "cloudflare-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/cloudflare.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "cloudfront-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/cloudfront.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "digitalocean-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/digitalocean.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "hetzner-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/hetzner.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "hodca-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/hodca.srs", "update_interval": "1d" },
+      { "type": "remote", "tag": "ovh-remote", "format": "binary", "url": "https://github.com/itdoginfo/allow-domains/releases/latest/download/ovh.srs", "update_interval": "1d" }
+    ],
+    "rules": [
+      { "action": "sniff" },
+      { "action": "hijack-dns", "protocol": "dns" },
+      { "rule_set": [ "domains", "block-remote", "geoblock-remote", "google_ai-remote", "telegram-remote", "youtube-remote", "cloudflare-remote", "cloudfront-remote", "digitalocean-remote", "hetzner-remote", "hodca-remote", "ovh-remote" ], "action": "route", "outbound": "external" },
+      { "action": "resolve", "server": "dns-local", "strategy": "ipv4_only" },
+      { "rule_set": [ "subnets" ], "action": "route", "outbound": "external" }
+    ],
+    "final": "direct"
+  }
+}
